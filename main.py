@@ -1,4 +1,7 @@
 from openai import OpenAI
+from pyvis.network import Network
+import networkx as nx
+import json
 from dotenv import find_dotenv, load_dotenv
 import os
 
@@ -7,6 +10,7 @@ load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key = openai_api_key)
+
 
 #create an assistant that utilizes file_search tool (for reading pdfs)
 assistant = client.beta.assistants.create(
@@ -44,30 +48,42 @@ assistant = client.beta.assistants.update(
   tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
 )
 
+
 # a Thread represents a conversation between a user and one or many Assistants.
 thread = client.beta.threads.create()
+
 
 # we can add a message or messages to the thread
 message = client.beta.threads.messages.create(
   thread_id=thread.id,
   role="user",
   content= f"""
-                Thoroughly extract the following relationships from the clinical research papers that have been provided:
-                - Relationships betweens each symptom and disease
-                - Relationships between each symptom and its treatment.
-                - Relationships between each medication and the mental health problem it is effective against.
-                - Relationships between each medication and its side-effect if available.
-                
+                Imagine you are a tele mental health provider at an online mental health platform. You frequently see many
+               patients with a variety of mental health disorders, particularly anxiety and depression. Your goal is to
+               make quick, informed decisions about treatment plans and ensure patients receive the best care possible
+               based on current clinical research.
 
-                Return the result in the following JSON format with at least 20 relationships:
-                [
-                    {{
-                        "subject": "Entity1",
-                        "relationship": "RelationshipType",
-                        "object": "Entity2"
-                    }}
-                ]
-                The output should just be in JSON. Do not add any additional words or messages
+
+               Using the provided clinical research papers, I need you to extract only the following key relationships to assist in making treatment decisions:
+               - Relationships between each symptom and its associated mental health disorder (e.g., anxiety, depression).
+               - Relationships between each symptom and its recommended treatment or intervention.
+               - Relationships between each symptom and its recommended therapy.
+               - Relationships between each medication and the mental health disorder it is most effective against.
+               - Relationships between each medication and its known side effects, if available.
+
+
+               Please return the results in the following JSON format, with at least 40 relationships:
+               [
+                   {{
+                       "source": "Entity1",
+                       "relationship": "RelationshipType",
+                       "target": "Entity2",
+                       "source_type": "strictly from these 3 possible classifications: Drug / Treatment, Condition / Symptom, Side Effect",
+                       "target_type": "strictly from these 3 possible classifications: Drug / Treatment, Condition / Symptom, Side Effect"
+                   }}
+               ]
+               The output should be provided in JSON format only. Do not include any additional words or messages. We are creating a knowledge after this with the JSON. 
+
                 """
 )
 
@@ -84,4 +100,129 @@ if run.status == 'completed':
     print(message_content.value)
 else:
   print(run.status)
+
+
+
+# message_content.value has extra characters
+cleaned_content = message_content.value.strip('```json\n').strip('```')
+
+#  parse the cleaned JSON content
+try:
+    edges = json.loads(cleaned_content)
+    print("JSON Parsed Successfully!")
+except json.JSONDecodeError as e:
+    print(f"Error parsing JSON: {e}")
+
+print(edges)
+
+
+# networkX directed graph
+G = nx.DiGraph()
+
+# three possible types - drug / treatment, condition / symptoms, side effect
+# feel free to play around with the colors
+color_map = {
+    "Drug / Treatment": "green",  
+    "Condition / Symptom": "lightcoral",    
+    "Side Effect": "lightblue"
+}
+
+shape_map = {
+    "Drug / Treatment": "dot",      
+    "Condition / Symptom": "dot",     
+    "Side Effect": "dot"        
+}
+
+
+# add nodes and edges to the graph 
+for edge in edges:
+    
+    G.add_node(edge['source'], title=edge['source'], color=color_map.get(edge['source_type'], 'gray'), shape= shape_map.get(edge['source_type'], 'star')) 
+    G.add_node(edge['target'], title=edge['target'], color=color_map.get(edge['target_type'], 'gray'), shape=shape_map.get(edge['target_type'], 'star'))
+    G.add_edge(edge['source'], edge['target'], label=edge['relationship'], color="#b4b7b8")
+
+# create the PyVis Network object
+net = Network(height="1200px", width="100%", notebook=True, directed=True, cdn_resources='in_line')
+
+# load the NetworkX graph into PyVis
+net.from_nx(G)
+net.set_options("""
+{
+  "physics": {
+    "enabled": true,
+    "solver": "forceAtlas2Based",
+    "forceAtlas2Based": {
+      "gravitationalConstant": -30,
+      "centralGravity": 0.005,
+      "springLength": 200,
+      "springConstant": 0.01
+    },
+    "minVelocity": 0.75,
+    "stabilization": {
+      "enabled": true,
+      "iterations": 150
+    }
+  }
+}
+""")
+
+
+"""
+DOCUMENTATION: SET_OPTIONS
+net.set_options(
+
+   "physics": {
+     - Enables a physics engine to control how nodes move and interact.
+     - This section adjusts repulsion, attraction, and stabilization, 
+       affecting how the graph is laid out dynamically.
+
+     "solver": "forceAtlas2Based"
+       - Specifies the physics model used to arrange nodes.
+       - "forceAtlas2Based" balances the forces between nodes:
+         * Repulsive forces push nodes apart to reduce clutter.
+         * Attractive forces draw connected nodes closer together.
+
+     "forceAtlas2Based": {
+       - Configures parameters for the "forceAtlas2Based" model:
+
+       "gravitationalConstant": -30
+         * A negative value increases node repulsion.
+         * Higher absolute values lead to a more spread-out graph.
+
+       "centralGravity": 0.005
+         * Controls the tendency of nodes to move toward the graph's center.
+         * Lower values lead to a more dispersed node arrangement.
+
+       "springLength": 200
+         * Defines the ideal distance between connected nodes.
+         * Larger values make connected nodes farther apart.
+
+       "springConstant": 0.01
+         * Sets the stiffness of the connection between nodes.
+         * Lower values provide more flexibility, allowing nodes to 
+           move freely before reaching a stable state.
+     }
+
+     "minVelocity": 0.75
+       - Sets the minimum movement speed for nodes.
+       - Higher values lead to faster stabilization of the graph.
+
+     "stabilization": {
+       - Adjusts how the graph settles into a stable layout.
+
+       "enabled": true
+         * Activates stabilization, allowing nodes to adjust 
+           positions until the layout becomes stable.
+
+       "iterations": 150
+         * Specifies the number of stabilization iterations.
+         * More iterations allow for finer adjustments, leading to 
+           a more stable and visually organized graph.
+     }
+   }
+---------------------------------------------------------------
+"""
+
+# generate and display the interactive graph in a notebook
+net.show("medication_condition_relationships.html")
 
