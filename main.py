@@ -58,7 +58,7 @@ message = client.beta.threads.messages.create(
   thread_id=thread.id,
   role="user",
   content= f"""
-                Imagine you are a tele mental health provider at an online mental health platform. You frequently see many
+               Imagine you are a tele mental health provider at an online mental health platform. You frequently see many
                patients with a variety of mental health disorders, particularly anxiety and depression. Your goal is to
                make quick, informed decisions about treatment plans and ensure patients receive the best care possible
                based on current clinical research.
@@ -70,6 +70,7 @@ message = client.beta.threads.messages.create(
                - Relationships between each symptom and its recommended therapy.
                - Relationships between each medication and the mental health disorder it is most effective against.
                - Relationships between each medication and its known side effects, if available.
+               Only extract the information from the provided clinical research papers and no other place. For example, if a side effect for a medication is not mentioned in the 3 provided papers, do not mention that information.
 
 
                Please return the results in the following JSON format, with at least 40 relationships:
@@ -80,11 +81,12 @@ message = client.beta.threads.messages.create(
                        "target": "Entity2",
                        "source_type": "strictly from these 3 possible classifications: Drug / Treatment, Condition / Symptom, Side Effect",
                        "target_type": "strictly from these 3 possible classifications: Drug / Treatment, Condition / Symptom, Side Effect"
+                       "resource": "paper extracted from (1 = fava-et-al-2008-difference-in-treatment-outcome-in-outpatients-with-anxious-versus-nonanxious-depression-a-star_d-report (1).pdf / 2 = Articles/100-Papers-in-Clinical-Psychiatry-Depressive-Disorders-Comparative-efficacy-and-acceptability-of-12-new-generation-antidepressants-a-multiple-treatments-meta-analysis.pdf/ 3 = WJCC-9-9350.pdf)"
+
                    }}
                ]
-               The output should be provided in JSON format only. Do not include any additional words or messages. We are creating a knowledge after this with the JSON. 
-
-                """
+               The output should be provided in JSON format only. Do not include any additional words or messages. We are creating a knowledge after this with the JSON.                
+              """
 )
 
 # Once all the user Messages have been added to the Thread, you can Run the Thread with any Assistant.
