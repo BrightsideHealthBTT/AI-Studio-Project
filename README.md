@@ -12,6 +12,9 @@ This project extracts and visualizes relationships from clinical research papers
 - Output results in a JSON format for further knowledge graph integration.
 
 ## Prerequisites
-- Python 3.8 or higher
+- Python
 - OpenAI API Key (stored in an `.env` file)
 
+## Setup Instructions
+
+### 1. Clone the Repository
