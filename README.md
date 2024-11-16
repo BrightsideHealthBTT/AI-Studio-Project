@@ -44,3 +44,11 @@ OPENAI_API_KEY= api_key_provided
 ```bash
 python main.py
 ```
+
+### Key Script Components
+- Upload Articles: The project uploads PDF research articles to OpenAI's vector store for processing.
+- Extract Relationships: Using GPT-4, the script extracts relationships between symptoms, treatments, and medications, returning the results in JSON format.
+- Visualize Relationships: The extracted relationships are visualized as an interactive graph using PyVis.
+
+### Output
+
