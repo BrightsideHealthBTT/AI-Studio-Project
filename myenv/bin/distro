@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/Users/linnkhantthuya/Documents/BrightSide Health/model/myenv/bin/python3.12" "$0" "$@"
+'''exec' "/Users/linnkhantthuya/Documents/BrightSide Health - Final Project/AI-Studio-Project/myenv/bin/python3.12" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re
