@@ -21,3 +21,26 @@ This project extracts and visualizes relationships from clinical research papers
 ```bash
 git clone <repository_url>
 cd AI-Studio-Project
+```
+
+### 2. Set Up a Virtual Environment
+```bash
+python -m venv myenv
+source myenv/bin/activate   # On Windows: myenv\Scripts\activate
+```
+
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Set Up Environment Variables
+Create a new file named .env and paste the line below:
+```bash
+OPENAI_API_KEY= api_key_provided
+```
+
+### 5. Run the project
+```bash
+python main.py
+```
