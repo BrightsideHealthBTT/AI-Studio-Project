@@ -1,6 +1,6 @@
 # AI-Studio-Project
 
-Repository for our Break Through Tech Fall 2024 Studio Challenge Project
+Repository for our Break Through Tech Fall 2024 Studio Challenge Project with BrightSide Health
 
 ## Overview
 This project extracts and visualizes relationships from clinical research papers using OpenAI GPT-4 and PyVis for creating interactive knowledge graphs. The tool is designed for tele-mental health providers to make informed decisions about treatments for anxiety and depression based on clinical research.
@@ -18,3 +18,6 @@ This project extracts and visualizes relationships from clinical research papers
 ## Setup Instructions
 
 ### 1. Clone the Repository
+```bash
+git clone <repository_url>
+cd AI-Studio-Project
