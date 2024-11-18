@@ -11,7 +11,6 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key = openai_api_key)
 
-
 #create an assistant that utilizes file_search tool (for reading pdfs)
 assistant = client.beta.assistants.create(
   name="Text Relationships Extractor",
@@ -78,8 +77,8 @@ message = client.beta.threads.messages.create(
                        "source": "Entity1",
                        "relationship": "RelationshipType",
                        "target": "Entity2",
-                       "source_type": "strictly from these 3 possible classifications: Drug / Treatment, Condition / Symptom, Side Effect",
-                       "target_type": "strictly from these 3 possible classifications: Drug / Treatment, Condition / Symptom, Side Effect"
+                       "source_type": "3 possible classifications: Drug or Treatment, Condition or Symptom, Side Effect",
+                       "target_type": "3 possible classifications: Drug or Treatment, Condition or Symptom, Side Effect"
                    }}
                ]
                The output should be provided in JSON format only. Do not include any additional words or messages. We are creating a knowledge after this with the JSON. 
@@ -98,6 +97,39 @@ if run.status == 'completed':
 
     message_content = messages[0].content[0].text
     print(message_content.value)
+    
+    #normalize the relationships for some common variations 
+    try:
+        # parsing
+        data = json.loads(message_content)
+
+        relationship_mapping = {
+            "recommended treatment for": "effective for",
+            "recommended intervention for": "effective for",
+            "adjunctive treatment for": "effective for",
+            "effective for": "effective for",
+            "side effects include": "side effect",
+            "side effects": "side effect",
+            "side effect": "side effect",
+            "recommended therapy for": "treatment for",
+            "combination therapy for": "treatment for",
+        }
+
+        # normalizing
+        for relationship in data:
+            relationship["relationship"] = relationship_mapping.get(
+                relationship["relationship"], relationship["relationship"]
+            )
+
+        # saved normalized relationships
+        normalized_relationships = data
+
+        # verifying normalized relationships
+        print(json.dumps(normalized_relationships, indent=4))
+
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON output: {e}")
+    
 else:
   print(run.status)
 
