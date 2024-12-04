@@ -148,6 +148,28 @@ net = Network(height="1200px", width="100%", notebook=True, directed=True, cdn_r
 
 # load the NetworkX graph into PyVis
 net.from_nx(G)
+
+legend_items = {
+    "Drug or Treatment": "green",
+    "Condition or Symptom": "lightcoral",
+    "Side Effect": "lightblue"
+}
+
+# color legend - position hard coded for now
+legend_x = -1300
+legend_y = 900
+
+for i, (label, color) in enumerate(legend_items.items()):
+    legend_node = f"Legend: {label}"
+    net.add_node(
+        legend_node,
+        color=color,
+        label=label,
+        x=legend_x,
+        y=legend_y - i * 80,  # Space out the legend items
+        physics=False  # Fix the position
+    )
+
 net.set_options("""
 {
   "physics": {
