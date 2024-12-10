@@ -47,17 +47,15 @@ assistant = client.beta.assistants.update(
   tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
 )
 
-
 # a Thread represents a conversation between a user and one or many Assistants.
 thread = client.beta.threads.create()
-
 
 # we can add a message or messages to the thread
 message = client.beta.threads.messages.create(
   thread_id=thread.id,
   role="user",
   content= f"""
-               Imagine you are a tele mental health provider at an online mental health platform. You frequently see many
+                Imagine you are a tele mental health provider at an online mental health platform. You frequently see many
                patients with a variety of mental health disorders, particularly anxiety and depression. Your goal is to
                make quick, informed decisions about treatment plans and ensure patients receive the best care possible
                based on current clinical research.
@@ -69,7 +67,6 @@ message = client.beta.threads.messages.create(
                - Relationships between each symptom and its recommended therapy.
                - Relationships between each medication and the mental health disorder it is most effective against.
                - Relationships between each medication and its known side effects, if available.
-               Only extract the information from the provided clinical research papers and no other place. For example, if a side effect for a medication is not mentioned in the 3 provided papers, do not mention that information.
 
 
                Please return the results in the following JSON format, with at least 40 relationships:
@@ -82,8 +79,9 @@ message = client.beta.threads.messages.create(
                        "target_type": "3 possible classifications: Drug or Treatment, Condition or Symptom, Side Effect"
                    }}
                ]
-               The output should be provided in JSON format only. Do not include any additional words or messages. We are creating a knowledge after this with the JSON.                
-              """
+               The output should be provided in JSON format only. Do not include any additional words or messages. We are creating a knowledge after this with the JSON. 
+
+                """
 )
 
 # Once all the user Messages have been added to the Thread, you can Run the Thread with any Assistant.
@@ -97,43 +95,8 @@ if run.status == 'completed':
 
     message_content = messages[0].content[0].text
     print(message_content.value)
-    
-    #normalize the relationships for some common variations 
-    try:
-        # parsing
-        data = json.loads(message_content)
-
-        relationship_mapping = {
-            "recommended treatment for": "effective for",
-            "recommended intervention for": "effective for",
-            "adjunctive treatment for": "effective for",
-            "effective for": "effective for",
-            "side effects include": "side effect",
-            "side effects": "side effect",
-            "side effect": "side effect",
-            "recommended therapy for": "treatment for",
-            "combination therapy for": "treatment for",
-        }
-
-        # normalizing
-        for relationship in data:
-            relationship["relationship"] = relationship_mapping.get(
-                relationship["relationship"], relationship["relationship"]
-            )
-
-        # saved normalized relationships
-        normalized_relationships = data
-
-        # verifying normalized relationships
-        print(json.dumps(normalized_relationships, indent=4))
-
-    except json.JSONDecodeError as e:
-        print(f"Failed to parse JSON output: {e}")
-    
 else:
   print(run.status)
-
-
 
 # message_content.value has extra characters
 cleaned_content = message_content.value.strip('```json\n').strip('```')
@@ -154,14 +117,14 @@ G = nx.DiGraph()
 # three possible types - drug / treatment, condition / symptoms, side effect
 # feel free to play around with the colors
 color_map = {
-    "Drug / Treatment": "green",  
-    "Condition / Symptom": "lightcoral",    
+    "Drug or Treatment": "green",  
+    "Condition or Symptom": "lightcoral",    
     "Side Effect": "lightblue"
 }
 
 shape_map = {
-    "Drug / Treatment": "dot",      
-    "Condition / Symptom": "dot",     
+    "Drug or Treatment": "dot",      
+    "Condition or Symptom": "dot",     
     "Side Effect": "dot"        
 }
 
@@ -169,15 +132,15 @@ shape_map = {
 # add nodes and edges to the graph 
 for edge in edges:
     
-    G.add_node(edge['source'], title=edge['source'], color=color_map.get(edge['source_type'], 'gray'), shape= shape_map.get(edge['source_type'], 'star')) 
-    G.add_node(edge['target'], title=edge['target'], color=color_map.get(edge['target_type'], 'gray'), shape=shape_map.get(edge['target_type'], 'star'))
+    G.add_node(edge['source'], title=edge['source'], color=color_map.get(edge['source_type'], 'gray'), shape= shape_map.get(edge['source_type'])) 
+    G.add_node(edge['target'], title=edge['target'], color=color_map.get(edge['target_type'], 'gray'), shape=shape_map.get(edge['target_type']))
     G.add_edge(edge['source'], edge['target'], label=edge['relationship'], color="#b4b7b8")
 
 # create the PyVis Network object
 net = Network(height="1200px", width="100%", notebook=True, directed=True, cdn_resources='in_line')
 
 # load the NetworkX graph into PyVis
-net.from_nx(G)
+net.from_nx(G)# Add Legend Nodes
 
 legend_items = {
     "Drug or Treatment": "green",
@@ -199,7 +162,7 @@ for i, (label, color) in enumerate(legend_items.items()):
         y=legend_y - i * 80,  # Space out the legend items
         physics=False  # Fix the position
     )
-
+    
 net.set_options("""
 {
   "physics": {
@@ -279,4 +242,3 @@ net.set_options(
 
 # generate and display the interactive graph in a notebook
 net.show("medication_condition_relationships.html")
-
